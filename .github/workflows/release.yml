@@ -1,0 +1,49 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*' # Se activa cada vez que creas un tag que empieza con 'v'
+
+jobs:
+  build-tauri:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-latest, ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Instalar Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Instalar dependencias de Linux (solo para Ubuntu)
+        if: matrix.platform == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18 # Puedes cambiar esto a tu versión de Node
+
+      - name: Instalar dependencias de NPM
+        run: npm install
+
+      - name: Construir el frontend (Vite)
+        run: npm run build
+
+      - name: Construir la app con Tauri
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }} # Usa el tag (ej. v0.0.1) como nombre
+          releaseName: 'App Release ${{ github.ref_name }}'
+          releaseBody: 'Este es un release automático.'
+          releaseDraft: false
+          prerelease: false
