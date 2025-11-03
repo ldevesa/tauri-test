@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - 'v*' # Se activa cada vez que creas un tag que empieza con 'v'
+permissions:
+  contents: write
 
 jobs:
   build-tauri:
